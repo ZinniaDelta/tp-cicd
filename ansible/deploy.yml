@@ -1,0 +1,43 @@
+
+---
+- name: Deploiement du site web
+  hosts: webservers
+  gather_facts: false
+
+  tasks:
+    - name: Creer le repertoire du projet
+      ansible.builtin.file:
+        path: /home/me/tp-cicd
+        state: directory
+
+    - name: Copier les fichiers du projet
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/../{{ item }}"
+        dest: "/home/me/tp-cicd/{{ item }}"
+      loop:
+        - index.html
+        - Dockerfile
+        - css/
+        - js/
+
+    - name: Construire l'image Docker
+      become: true
+      ansible.builtin.command:
+        cmd: docker build -t tp-cicd-web:1.0 .
+        chdir: /home/me/tp-cicd
+
+    - name: Supprimer l'ancien conteneur Docker
+      become: true
+      ansible.builtin.command: docker rm -f tp-cicd-web
+      register: suppression
+      failed_when: suppression.rc != 0 and 'No such container' not in suppression.stderr
+      changed_when: suppression.rc == 0
+
+    - name: Demarrer le nouveau conteneur Docker
+      become: true
+      ansible.builtin.command: >
+        docker run -d
+        --name tp-cicd-web
+        -p 80:80
+        tp-cicd-web:1.0
+

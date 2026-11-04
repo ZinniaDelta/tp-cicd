@@ -21,20 +21,17 @@
         - js/
 
     - name: Construire l'image Docker
-      become: true
       ansible.builtin.command:
         cmd: docker build -t tp-cicd-web:1.0 .
         chdir: /home/me/tp-cicd
 
     - name: Supprimer l'ancien conteneur Docker
-      become: true
       ansible.builtin.command: docker rm -f tp-cicd-web
       register: suppression
       failed_when: suppression.rc != 0 and 'No such container' not in suppression.stderr
       changed_when: suppression.rc == 0
 
     - name: Demarrer le nouveau conteneur Docker
-      become: true
       ansible.builtin.command: >
         docker run -d
         --name tp-cicd-web
